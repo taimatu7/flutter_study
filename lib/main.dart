@@ -1,7 +1,45 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'dart:io';
+import 'package:http/http.dart' as http;
+
+void main() async {
+  final server = await HttpServer.bind('0.0.0.0', 8080);
+  print('Listening on localhost:${server.port}');
+
+  String address = "";
+
+  final interfaces = await NetworkInterface.list();
+  for (var interface in interfaces) {
+    print('Interface: ${interface.name}');
+    for (var address in interface.addresses) {
+      if (address.type == InternetAddressType.IPv4) {
+        print('IPv4 Address: ${address.address}');
+      }
+    }
+  }
+
+  await for (HttpRequest request in server) {
+    handleRequest(request);
+  }
+}
+
+void handleRequest(HttpRequest request) {
+  if (request.method == 'GET') {
+    // GETリクエストの処理
+    // 例: リクエストに応じたデータを返す
+    final response = http.Response('Hello, World!', HttpStatus.ok);
+    request.response
+      ..statusCode = response.statusCode
+      ..headers.contentType = ContentType.text
+      ..write(response.body)
+      ..close();
+  } else {
+    // サポートされていないメソッドの場合
+    request.response.statusCode = HttpStatus.methodNotAllowed;
+    request.response.write('Method not allowed.');
+    request.response.close();
+  }
 }
 
 class MyApp extends StatelessWidget {
