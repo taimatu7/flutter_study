@@ -5,55 +5,30 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 
+part 'main.g.dart';
+
 class Service {
-  Handler get handler {
-    final router = Router();
-
-    router.get('/say-hi/<name>', (Request request, String name) {
-      return Response.ok('hi $name');
-    });
-
-    router.get('/user/<userId|[0-9]+>', (Request request, String userId) {
-      return Response.ok('User has the user-number: $userId');
-    });
-
-    router.get('/wave', (Request request) async {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      return Response.ok('_o/');
-    });
-
-    router.get('/api/', Api().router);
-
-    router.all('/<ignored|.*>', (Request request) {
-      Response.notFound('not found');
-    });
-
-    return router;
-  }
-}
-
-class Api {
-  Future<Response> _messages(Request request) async {
-    return Response.ok([]);
+  @Route.get('/say-hi/<name>')
+  Future<Response> sayHi(Request request, String name) async {
+    return Response.ok('Hi $name');
   }
 
-  Router get router {
-    final router = Router();
-
-    router.get('/messages', _messages);
-    router.get('/messages/', _messages);
-
-    router.all('/<ignored|.*>', (Request request) {
-      Response.notFound('not found');
-    });
-
-    return router;
+  @Route.get('/user/<userId|[0-9]+>')
+  Future<Response> showUser(Request request, String userId) async {
+    return Response.ok('User $userId');
   }
+
+  @Route.get('/<ignored|.*>')
+  Future<Response> notFound(Request request) async {
+    return Response.notFound('Page not found');
+  }
+
+  Handler get handler => _$ServiceRouter(this);
 }
 
 void main() async {
   final service = Service();
-  final server = await shelf_io.serve(service.handler, '0.0.0.0', 8080);
+  final server = await shelf_io.serve(service.handler, 'localhost', 8080);
 
   final addresses = await NetworkInterface.list(
       includeLoopback: false, type: InternetAddressType.IPv4);
